@@ -1,16 +1,9 @@
-import { useState } from 'react'
+﻿import AppRoutes from "./routes/AppRoutes";
+import NotificationOverlay from "./pages/NotificationOverlay";
 
-import './App.css'
+export default function App() {
+  const params = new URLSearchParams(window.location.search);
+  const overlay = params.get("overlay") === "true";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      
-        
-    </>
-  )
+  return overlay ? <NotificationOverlay /> : <AppRoutes />;
 }
-
-export default App
