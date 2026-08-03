@@ -1,7 +1,51 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, nativeImage, Notification } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/papo_circle.svg?asset'
+import https from 'https'
+import http from 'http'
+
+const iconPath =
+  process.platform === 'win32'
+    ? join(__dirname, '../../build/icon.ico')
+    : process.platform === 'darwin'
+      ? join(__dirname, '../../build/icon.icns')
+      : join(__dirname, '../../build/icon.png')
+
+const appIcon = nativeImage.createFromPath(iconPath)
+
+// Função helper para converter URL para base64
+async function urlToBase64(url) {
+  if (!url) return null
+
+  // Se já é um data URI, retorna como está
+  if (url.startsWith('data:')) {
+    return url
+  }
+
+  try {
+    const protocol = url.startsWith('https') ? https : http
+    return new Promise((resolve, reject) => {
+      protocol.get(url, { timeout: 5000 }, (response) => {
+        const chunks = []
+        response.on('data', chunk => chunks.push(chunk))
+        response.on('end', () => {
+          try {
+            const buffer = Buffer.concat(chunks)
+            const base64 = buffer.toString('base64')
+            const mimeType = response.headers['content-type'] || 'image/png'
+            const dataUri = `data:${mimeType};base64,${base64}`
+            resolve(dataUri)
+          } catch (err) {
+            reject(err)
+          }
+        })
+      }).on('error', reject)
+    })
+  } catch (error) {
+    console.warn('Erro ao converter imagem para base64:', error)
+    return null
+  }
+}
 
 function createWindow() {
   // Create the browser window.
@@ -9,13 +53,17 @@ function createWindow() {
     width: 900,
     height: 670,
     show: false,
+    icon: appIcon,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
+
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(appIcon)
+  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -51,6 +99,37 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // IPC para notificações do sistema
+  ipcMain.on('notification:show', (event, config) => {
+    try {
+      const { title, body, icon } = config
+
+      const notification = new Notification({
+        title: title || 'Notificação',
+        body: body || '',
+        icon: urlToBase64(icon) || appIcon,
+        silent: false,
+        urgency: config.urgency || 'normal',
+      })
+
+      notification.show()
+
+      notification.on('click', () => {
+        try {
+          event.sender.send('notification:clicked', config)
+          const mainWindow = BrowserWindow.getAllWindows()[0]
+          if (mainWindow) {
+            mainWindow.focus()
+          }
+        } catch (error) {
+          console.error('Erro ao processar clique em notificação:', error)
+        }
+      })
+    } catch (error) {
+      console.error('Erro ao exibir notificação:', error)
+    }
+  })
 
   createWindow()
 
