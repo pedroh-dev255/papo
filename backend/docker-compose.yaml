@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+
+    ports:
+      - "${DB_PORT}:3306"
+
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+
+    command: >
+      --default-authentication-plugin=caching_sha2_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis
+    restart: unless-stopped
+
+    ports:
+      - "${REDIS_PORT}:6379"
+
+    volumes:
+      - ./redis/data:/data
+
+    command: redis-server --appendonly yes
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+    volumes:
+      - ./minio/data:/data
+
+    command: server /data --console-address ":9001"
+
+  minio-init:
+    image: minio/mc:latest
+
+    depends_on:
+      - minio
+
+    entrypoint: >
+      /bin/sh -c "
+      sleep 10;
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb local/${MINIO_BUCKET} --ignore-existing;
+      mc anonymous set none local/${MINIO_BUCKET};
+      exit 0;
+      "
+
+  livekit:
+    image: livekit/livekit:latest
+    container_name: livekit
+    restart: unless-stopped
+
+    ports:
+      - "7880:7880"
+      - "7881:7881/tcp"
+      - "7882:7882/udp"
+
+    command: >
+      --dev
+      --bind 0.0.0.0
+
+    environment:
+      LIVEKIT_KEYS: ${LIVEKIT_API_KEY}:${LIVEKIT_API_SECRET}
+
+#volumes:
+#  mysql_data:
+#  redis_data:
+#  minio_data:

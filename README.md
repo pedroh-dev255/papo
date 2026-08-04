@@ -69,9 +69,66 @@ cd papo
 
 ```
 
-### 2. Subir os serviços de infraestrutura (Docker)
+---
 
-Crie o arquivo `docker-compose.yml` na raiz do projeto e inicie os contêineres:
+### 2. Configurar Variáveis de Ambiente (`.env`)
+
+No diretório do servidor (`backend`), crie um arquivo `.env`:
+
+```env
+# SERVER
+PORT=3000
+FRONT_URL=""
+
+# JWT
+JWT_SECURITY=super_secret_key
+JWT_EXPIRES=15d
+
+# RateLimit
+REQ_AUTH_LIMIT=10
+REQ_AUTH_TIMEOUT=10
+
+# Sistema de E-mail
+MAIL_HOST=
+MAIL_USER=
+MAIL_PASS=
+
+# MySQL
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASS=
+DB_NAME=papo_chat
+
+# Redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_USERNAME=
+REDIS_PASSWORD=
+
+# MinIO
+MINIO_ENDPOINT=localhost
+MINIO_ROOT_USER=admin
+MINIO_ROOT_PASSWORD=SuaSenhaMuitoForte123!
+MINIO_BUCKET=uploads
+MINIO_API_PORT=9000
+MINIO_CONSOLE_PORT=9001
+MINIO_SSL=false
+
+# LiveKit (Chamadas de Áudio)
+LIVEKIT_URL=ws://localhost:7880
+LIVEKIT_API_KEY=devkey
+LIVEKIT_API_SECRET=secretphrase_must_be_at_least_32_chars
+
+```
+
+*Altere os dados de usuarios, senhas e Secrets, esses dados seram ultilizados pelos container Dockers.*
+
+---
+
+### 3. Subir os serviços de infraestrutura (Docker)
+
+Ultilize o aquivo `docker-compose.yml` na raiz do projeto para iniciar os contêineres:
 
 ```bash
 docker-compose up -d
@@ -82,40 +139,6 @@ docker-compose up -d
 
 ---
 
-### 3. Configurar Variáveis de Ambiente (`.env`)
-
-No diretório do servidor (`backend`), crie um arquivo `.env`:
-
-```env
-PORT=3000
-NODE_ENV=development
-
-# MySQL
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=papo_user
-DB_PASS=papo_password
-DB_NAME=papo_db
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# MinIO
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_ACCESS_KEY=papo_minio_access
-MINIO_SECRET_KEY=papo_minio_secret
-MINIO_BUCKET=papo-media
-
-# LiveKit (Chamadas de Áudio)
-LIVEKIT_URL=ws://localhost:7880
-LIVEKIT_API_KEY=devkey
-LIVEKIT_API_SECRET=secretphrase_must_be_at_least_32_chars
-
-```
-
----
 
 ### 4. Executar o Backend
 
