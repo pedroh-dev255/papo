@@ -41,4 +41,131 @@ O **Papo** é uma plataforma de comunicação empresarial focada em privacidade,
    │  (Object Storage)     │   │   │  (Chamadas de Áudio)│                              │
    └───────────────────────┘   │   └─────────────────────┘                              │
                                └────────────────────────────────────────────────────────┘
+
 ```
+
+### 🎯 Como resolvemos os gargalos de desempenho:
+
+1. **Envio de Arquivos Grandes (Presigned URLs):** O cliente solicita ao backend uma URL de upload pré-assinada e envia o arquivo de mídia **diretamente para o MinIO**. A API e o banco de dados não processam o tráfego de bytes do arquivo, eliminando travamentos no servidor.
+2. **Ligações de Áudio com LiveKit:** As chamadas utilizam a arquitetura **SFU (Selective Forwarding Unit)** via WebRTC com o LiveKit, garantindo cancelamento de eco, adaptação dinâmica ao uso de rede e baixíssimo consumo de CPU do servidor principal.
+
+---
+
+## 🚀 Como Rodar o Projeto em Desenvolvimento
+
+### Pré-requisitos
+
+* [Node.js](https://nodejs.org/) (v22 ou superior)
+* [Docker](https://www.docker.com/) e **Docker Compose**
+* [Git](https://git-scm.com/)
+
+---
+
+### 1. Clonar o repositório
+
+```bash
+git clone [https://github.com/pedroh-dev255/papo.git](https://github.com/pedroh-dev255/papo.git)
+cd papo
+
+```
+
+### 2. Subir os serviços de infraestrutura (Docker)
+
+Crie o arquivo `docker-compose.yml` na raiz do projeto e inicie os contêineres:
+
+```bash
+docker-compose up -d
+
+```
+
+*Isto iniciará o **MySQL**, **Redis**, **MinIO** e o **LiveKit** em contêineres locais.*
+
+---
+
+### 3. Configurar Variáveis de Ambiente (`.env`)
+
+No diretório do servidor (`backend`), crie um arquivo `.env`:
+
+```env
+PORT=3000
+NODE_ENV=development
+
+# MySQL
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=papo_user
+DB_PASS=papo_password
+DB_NAME=papo_db
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# MinIO
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=papo_minio_access
+MINIO_SECRET_KEY=papo_minio_secret
+MINIO_BUCKET=papo-media
+
+# LiveKit (Chamadas de Áudio)
+LIVEKIT_URL=ws://localhost:7880
+LIVEKIT_API_KEY=devkey
+LIVEKIT_API_SECRET=secretphrase_must_be_at_least_32_chars
+
+```
+
+---
+
+### 4. Executar o Backend
+
+```bash
+cd backend
+npm install
+npm run dev
+
+```
+
+---
+
+### 5. Executar o Frontend / Electron
+
+Em outro terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+
+```
+
+---
+
+## 📦 Build para Produção (Windows, Linux, macOS)
+
+Para gerar os executáveis instaláveis do aplicativo Desktop:
+
+```bash
+cd frontend
+npm run build:windows
+
+```
+
+*Os binários instaláveis (`.exe`, `.AppImage`, `.dmg`) serão gerados na pasta `dist/`.*
+
+---
+
+## 📄 Licença
+
+MIT.
+
+---
+
+### Resumo das escolhas técnicas recomendadas:
+
+1. **Para as Ligações de Áudio: LiveKit Server (SFU)**
+   * **Por que foi escolhido?** É atualmente a ferramenta *open-source* mais moderna para WebRTC. Funciona nativamente em contêiner Docker, suporta milhares de salas de áudio simultâneas e consome fração mínima de hardware se comparado ao Asterisk/FreeSWITCH antigo.
+2. **Armazenamento:** MinIO lidando com arquivos pesados via *Presigned URLs*.
+3. **Cache & Tempo Real:** Redis garantindo que múltiplas instâncias do Express compartilhem conexões WebSocket sem perder mensagens ou o status dos usuários (*Online/Offline*).
+
+---
