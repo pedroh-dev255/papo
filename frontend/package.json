@@ -27,6 +27,7 @@
     "@mui/material": "^5.14.14",
     "@mui/styled-engine": "^9.1.1",
     "electron-updater": "^6.3.9",
+    "emoji-picker-react": "^4.19.1",
     "react-hook-form": "^7.48.0",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.20.1",
