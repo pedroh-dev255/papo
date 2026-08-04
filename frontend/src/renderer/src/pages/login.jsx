@@ -22,10 +22,14 @@ import {
   VisibilityOff,
   Business,
 } from "@mui/icons-material";
+import KeyIcon from '@mui/icons-material/Key';
 import { useAuth } from "../contexts/AuthContext";
 import icon from "../assets/papo_circle.svg";
 
 const schema = yup.object().shape({
+  codigo : yup
+    .string()
+    .required("Email é obrigatório"),
   email: yup
     .string()
     .email("Email inválido")
@@ -152,6 +156,60 @@ export default function Login() {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)}>
+
+            <TextField
+              fullWidth
+              label="Codigo"
+              type="text"
+              margin="normal"
+              {...register("codigo")}
+              error={!!errors.codigo}
+              helperText={errors.codigo?.message}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 0,
+                  bgcolor: "#eeeded",
+                  '& fieldset': {
+                    borderColor: '#bebebe',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#525252',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#353535',
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: '#4e4e4e',
+                  '&.Mui-focused': {
+                    color: '#4e4e4e',
+                  },
+                },
+                '& .MuiInputBase-input': {
+                  color: '#494949',
+                },
+                '& .MuiFormHelperText-root': {
+                  color: '#e41414',
+                  marginLeft: 0,
+                },
+                '& .Mui-error .MuiOutlinedInput-root fieldset': {
+                  borderColor: '#e41414',
+                },
+                '& .Mui-error .MuiFormHelperText-root': {
+                  color: '#cc3333',
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <KeyIcon sx={{ color: '#555', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+
             <TextField
               fullWidth
               label="Email"
@@ -266,7 +324,12 @@ export default function Login() {
                 ),
               }}
             />
-
+            <Typography>
+              Salvar Codigo
+            </Typography>
+            <Typography>
+              Salvar Usuario
+            </Typography>
             <Button
               type="submit"
               fullWidth

@@ -147,7 +147,14 @@ Para gerar os executáveis instaláveis do aplicativo Desktop:
 
 ```bash
 cd frontend
-npm run build:windows
+#PARA WINDOWS
+npm run build:win
+
+#PARA MAC
+npm run build:mac
+
+#PARA LINUX
+npm run build:mac
 
 ```
 
