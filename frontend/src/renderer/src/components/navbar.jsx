@@ -84,15 +84,6 @@ export default function Navbar() {
         return userData ? JSON.parse(userData) : null;
     });
 
-    // Simular novas notificações
-    useEffect(() => {
-        const interval = setInterval(() => {
-            // Simula chegada de nova notificação a cada 10 segundos
-            setNotifications(prev => prev + 1);
-        }, 10000);
-
-        return () => clearInterval(interval);
-    }, []);
 
     const handleMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
@@ -115,12 +106,6 @@ export default function Navbar() {
         handleMenuClose();
     };
 
-    // Função para marcar notificações como lidas
-    const handleNotificationsClick = () => {
-        setNotifications(0);
-        // Navegar para página de notificações
-        handleNavigate("/a");
-    };
 
     return (
         <AppBar
@@ -172,7 +157,7 @@ export default function Navbar() {
                             fontSize: "16px",
                         }}
                     >
-                        Papo
+                        Papo{location.pathname === "/" ? " - Chat" : location.pathname === "/contatos" ? " - Contatos" : location.pathname.startsWith("/conversa") ? " - Conversa" : ""}
                     </Typography>
                 </Box>
 
@@ -206,7 +191,7 @@ export default function Navbar() {
                                 color: "#555555"
                             }
                         }}
-                        onClick={() => handleNavigate("/contacts")}
+                        onClick={() => handleNavigate("/contatos")}
                     >
                         <People fontSize="small" />
                     </IconButton>

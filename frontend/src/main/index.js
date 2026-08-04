@@ -50,8 +50,10 @@ async function urlToBase64(url) {
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 500,
+    minWidth: 330,
+    height: 600,
+    minHeight: 400,
     show: false,
     icon: appIcon,
     autoHideMenuBar: true,
@@ -101,17 +103,31 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   // IPC para notificações do sistema
-  ipcMain.on('notification:show', (event, config) => {
+  ipcMain.on('notification:show', async (event, config) => {
     try {
       const { title, body, icon } = config
+
+      let notificationIcon = appIcon
+
+      if (icon) {
+        try {
+          const data = await urlToBase64(icon)
+          if (data) {
+            notificationIcon = nativeImage.createFromDataURL(data)
+          }
+        } catch (e) {
+          console.error(e)
+        }
+      }
 
       const notification = new Notification({
         title: title || 'Notificação',
         body: body || '',
-        icon: urlToBase64(icon) || appIcon,
+        icon: notificationIcon,
         silent: false,
-        urgency: config.urgency || 'normal',
+        urgency: config.urgency || 'normal'
       })
+
 
       notification.show()
 
