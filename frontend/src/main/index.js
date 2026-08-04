@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, nativeImage, Notification } from 'electron'
+import { Tray, Menu, app, shell, BrowserWindow, ipcMain, nativeImage, Notification, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import https from 'https'
@@ -12,6 +12,10 @@ const iconPath =
       : join(__dirname, '../../build/icon.png')
 
 const appIcon = nativeImage.createFromPath(iconPath)
+
+let mainWindow
+let tray
+let isQuiting = false
 
 // Função helper para converter URL para base64
 async function urlToBase64(url) {
@@ -49,7 +53,7 @@ async function urlToBase64(url) {
 
 function createWindow() {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 500,
     minWidth: 330,
     height: 600,
@@ -71,6 +75,24 @@ function createWindow() {
     mainWindow.show()
   })
 
+  let firstClose = true
+
+  mainWindow.on('close', (event) => {
+    if (!isQuiting) {
+      event.preventDefault()
+      mainWindow.hide()
+
+      if (firstClose) {
+        firstClose = false
+
+        new Notification({
+          title: 'Papo Chat',
+          body: 'O aplicativo continuará executando na bandeja do sistema.'
+        }).show()
+      }
+    }
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -89,18 +111,11 @@ function createWindow() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.phcore.papo')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
 
   // IPC para notificações do sistema
   ipcMain.on('notification:show', async (event, config) => {
@@ -134,8 +149,13 @@ app.whenReady().then(() => {
       notification.on('click', () => {
         try {
           event.sender.send('notification:clicked', config)
-          const mainWindow = BrowserWindow.getAllWindows()[0]
           if (mainWindow) {
+            mainWindow.show()
+
+            if (mainWindow.isMinimized()) {
+              mainWindow.restore()
+            }
+
             mainWindow.focus()
           }
         } catch (error) {
@@ -149,6 +169,70 @@ app.whenReady().then(() => {
 
   createWindow()
 
+  tray = new Tray(appIcon)
+
+  tray.setToolTip('Papo Chat')
+
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'Abrir',
+        click() {
+          if (!mainWindow) return
+
+          mainWindow.show()
+
+          if (mainWindow.isMinimized()) {
+            mainWindow.restore()
+          }
+
+          mainWindow.focus()
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Sair',
+        async click() {
+          const { response } = await dialog.showMessageBox(mainWindow, {
+            type: 'question',
+            title: 'Sair do Papo Chat',
+            message: 'Deseja realmente sair?',
+            detail:
+              'Ao sair, você deixará de receber novas mensagens e notificações.',
+            buttons: ['Cancelar', 'Reiniciar', 'Sair'],
+            defaultId: 1,
+            cancelId: 0,
+            icon: appIcon
+          })
+
+          switch (response) {
+            case 1:
+              isQuiting = true
+              app.relaunch()
+              app.quit()
+              break
+
+            case 2:
+              isQuiting = true
+              app.quit()
+              break
+          }
+        }
+      }
+    ])
+  )
+
+  tray.on('click', () => {
+    if (!mainWindow) return
+
+    if (mainWindow.isVisible()) {
+      mainWindow.focus()
+    } else {
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
@@ -159,10 +243,8 @@ app.whenReady().then(() => {
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+app.on('window-all-closed', (event) => {
+  event.preventDefault()
 })
 
 // In this file you can include the rest of your app's specific main process

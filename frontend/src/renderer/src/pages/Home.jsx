@@ -20,6 +20,8 @@ const contacts = [
   {
     id: 1,
     name: 'João Silva',
+    grupo: 'f1',
+    type: "individual",
     lastMessage: 'E aí, tudo certo?',
     time: '09:15',
     avatar: 'https://i.pravatar.cc/150?img=1',
@@ -27,6 +29,8 @@ const contacts = [
   {
     id: 2,
     name: 'Maria Oliveira',
+    grupo: 'f1',
+    type: "individual",
     lastMessage: 'Te enviei os arquivos.',
     time: '08:42',
     avatar: 'https://i.pravatar.cc/150?img=5',
@@ -34,6 +38,8 @@ const contacts = [
   {
     id: 3,
     name: 'Carlos Santos',
+    grupo: 'f1',
+    type: "individual",
     lastMessage: 'Vamos fazer a reunião às 14h.',
     time: 'Ontem',
     avatar: 'https://i.pravatar.cc/150?img=12',
@@ -41,6 +47,8 @@ const contacts = [
   {
     id: 4,
     name: 'Ana Costa',
+    grupo: 'f1',
+    type: "individual",
     lastMessage: '😂😂😂',
     time: 'Ontem',
     avatar: 'https://i.pravatar.cc/150?img=20',
@@ -48,6 +56,8 @@ const contacts = [
   {
     id: 5,
     name: 'Equipe TI',
+    grupo: 'f1',
+    type: "grupo",
     lastMessage: 'Servidor reiniciado com sucesso.',
     time: 'Seg',
     avatar: 'https://i.pravatar.cc/150?img=30',
@@ -55,6 +65,8 @@ const contacts = [
   {
     id: 6,
     name: 'Carlos Santos',
+    grupo: 'f1',
+    type: "individual",
     lastMessage: 'Vamos fazer a reunião às 14h.',
     time: 'Ontem',
     avatar: 'https://i.pravatar.cc/150?img=12',
@@ -62,13 +74,17 @@ const contacts = [
   {
     id: 7,
     name: 'Ana Costa',
+    grupo: 'f1',
+    type: "individual",
     lastMessage: '😂😂😂',
     time: 'Ontem',
     avatar: 'https://i.pravatar.cc/150?img=20',
   },
   {
     id: 8,
-    name: 'Equipe TI',
+    name: 'Equipe INFRA',
+    grupo: 'f1',
+    type: "grupo",
     lastMessage: 'Servidor reiniciado com sucesso.',
     time: 'Seg',
     avatar: 'https://i.pravatar.cc/150?img=30',

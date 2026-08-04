@@ -186,9 +186,14 @@ export default function Conversa() {
   const animationRef = useRef(null);
   const progressContainerRef = useRef(null);
   const isDurationLoadingRef = useRef(false);
+  const textFieldRef = useRef(null);
 
   const open = Boolean(anchorEl);
   const emojiOpen = Boolean(emojiAnchorEl);
+
+  //Drag and drop handlers
+  const [isDragOver, setIsDragOver] = useState(false);
+  const dragCounterRef = useRef(0);
 
   // Gerar dados de waveform simulados (fallback)
   const generateWaveformData = () => {
@@ -290,6 +295,53 @@ export default function Conversa() {
       audio.load();
     });
   }, [audioDuration, audioLoaded, recordingTime]);
+
+  // Função para processar arquivos colados (Ctrl+V)
+  const handlePaste = useCallback((event) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    const filesToAdd = [];
+
+    for (const item of items) {
+      // Verificar se é um arquivo
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) {
+          let type = 'file';
+          let icon = <InsertDriveFileIcon />;
+
+          // Determinar o tipo baseado no MIME type
+          if (file.type.startsWith('image/')) {
+            type = 'image';
+            icon = <ImageIcon />;
+          } else if (file.type.startsWith('video/')) {
+            type = 'video';
+            icon = <VideoLibraryIcon />;
+          }
+
+          const fileData = {
+            file,
+            type,
+            name: file.name || `${type}_${Date.now()}`,
+            size: file.size,
+            url: type === 'image' ? URL.createObjectURL(file) : null,
+            videoUrl: type === 'video' ? URL.createObjectURL(file) : null,
+          };
+
+          filesToAdd.push(fileData);
+        }
+      }
+    }
+
+    // Adicionar arquivos ao estado
+    if (filesToAdd.length > 0) {
+      setSelectedFiles(prev => [...prev, ...filesToAdd]);
+
+      // Mostrar feedback visual (opcional)
+      console.log(`${filesToAdd.length} arquivo(s) colado(s):`, filesToAdd);
+    }
+  }, []);
 
   // Manipuladores de anexos
   const handleAttachClick = (event) => {
@@ -636,6 +688,17 @@ export default function Conversa() {
     }
   };
 
+  // Configurar evento de paste no campo de texto
+  useEffect(() => {
+    const textField = textFieldRef.current;
+    if (textField) {
+      textField.addEventListener('paste', handlePaste);
+      return () => {
+        textField.removeEventListener('paste', handlePaste);
+      };
+    }
+  }, [handlePaste]);
+
   // Limpar recursos ao desmontar
   useEffect(() => {
     return () => {
@@ -654,6 +717,135 @@ export default function Conversa() {
       isDurationLoadingRef.current = false;
     };
   }, [audioUrl]);
+
+
+  const preventDefaults = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Manipulador de drag enter
+  const handleDragEnter = useCallback((e) => {
+    preventDefaults(e);
+    dragCounterRef.current += 1;
+
+    // Verificar se tem arquivos sendo arrastados
+    if (e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  // Manipulador de drag over
+  const handleDragOver = useCallback((e) => {
+    preventDefaults(e);
+    // Mostrar feedback visual
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  // Manipulador de drag leave
+  const handleDragLeave = useCallback((e) => {
+    preventDefaults(e);
+    dragCounterRef.current -= 1;
+
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  // Manipulador de drop
+  const handleDrop = useCallback((e) => {
+    preventDefaults(e);
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    const newFiles = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Determinar o tipo do arquivo
+      let type = 'file';
+      let icon = <InsertDriveFileIcon />;
+
+      if (file.type.startsWith('image/')) {
+        type = 'image';
+        icon = <ImageIcon />;
+      } else if (file.type.startsWith('video/')) {
+        type = 'video';
+        icon = <VideoLibraryIcon />;
+      }
+
+      const fileData = {
+        file,
+        type,
+        name: file.name,
+        size: file.size,
+        url: type === 'image' ? URL.createObjectURL(file) : null,
+        videoUrl: type === 'video' ? URL.createObjectURL(file) : null,
+      };
+
+      newFiles.push(fileData);
+    }
+
+    // Adicionar arquivos ao estado
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+
+    // Feedback visual
+    console.log(`${newFiles.length} arquivo(s) arrastado(s):`, newFiles);
+  }, []);
+
+
+  const DragOverlay = () => {
+    if (!isDragOver) return null;
+
+    return (
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          bgcolor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '4px dashed white',
+          borderRadius: 2,
+          m: 2,
+          backdropFilter: 'blur(4px)',
+        }}
+
+        onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+      >
+        <Box
+          sx={{
+            bgcolor: 'white',
+            p: 4,
+            borderRadius: 3,
+            textAlign: 'center',
+            maxWidth: 400,
+          }}
+        >
+          <InsertDriveFileIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+          <Typography variant="h6" gutterBottom>
+            Solte os arquivos aqui
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Imagens, vídeos ou qualquer tipo de arquivo
+          </Typography>
+        </Box>
+      </Box>
+    );
+  };
 
   return (
     <Box
@@ -675,6 +867,10 @@ export default function Conversa() {
           minHeight: 0,
           position: 'relative',
         }}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
       >
         {/* Cabeçalho */}
         <AppBar
@@ -730,14 +926,18 @@ export default function Conversa() {
                 key={msg.id}
                 sx={{
                   display: 'flex',
+
                   justifyContent: msg.fromMe ? 'flex-end' : 'flex-start',
                 }}
               >
                 <Paper
                   elevation={1}
                   sx={{
-                    p: 1.5,
-                    maxWidth: '70%',
+                    p: 0.8,
+                    pt: 0.4,
+                    pb: 0.4,
+                    borderRadius: 2.5,
+                    maxWidth: '80%',
                     bgcolor: msg.fromMe ? 'primary.main' : 'background.paper',
                     color: msg.fromMe ? 'primary.contrastText' : 'text.primary',
                   }}
@@ -748,7 +948,6 @@ export default function Conversa() {
                     sx={{
                       display: 'block',
                       textAlign: 'right',
-                      mt: 0.5,
                       opacity: 0.75,
                     }}
                   >
@@ -1091,11 +1290,12 @@ export default function Conversa() {
             <TextField
               fullWidth
               size="small"
-              placeholder="Digite uma mensagem..."
+              placeholder="Digite uma mensagem"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               disabled={isRecording || showRecordingUI || isConverting}
+              inputRef={textFieldRef}
             />
 
             {/* Botão de microfone ou enviar */}
@@ -1166,6 +1366,7 @@ export default function Conversa() {
           <Button onClick={() => setPreviewDialog(false)}>Fechar</Button>
         </DialogActions>
       </Dialog>
+      <DragOverlay/>
     </Box>
   )
 }
