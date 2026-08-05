@@ -10,6 +10,7 @@ const authMiddleware = require("./middlewares/authMiddleware");
 // Rotas
 const authRoute = require("./routes/authRoute");
 const userRoute = require("./routes/userRoute");
+const chatRoutes = require("./routes/chatRoute");
 
 const app = express();
 
@@ -43,7 +44,7 @@ app.get("/auth/validate", authMiddleware, (req, res) => {
 // Routes
 app.use("/auth", authRoute);
 app.use("/users", authMiddleware, userRoute);
-// app.use("/chat", chatRoutes);
+app.use("/chats", authMiddleware, chatRoutes);
 
 app.use((req, res) => {
     return res.status(404).json({

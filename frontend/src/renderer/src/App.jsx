@@ -6,7 +6,7 @@ function App() {
     <>
       <AppRoutes />
       <Toaster
-        position="top-right"
+        position="bottom-left"
         reverseOrder={false}
         gutter={8}
         containerClassName=""

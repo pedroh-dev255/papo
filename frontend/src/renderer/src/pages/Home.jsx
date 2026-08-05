@@ -8,92 +8,86 @@ import {
   Typography,
   SpeedDial,
   SpeedDialAction,
+  Paper,
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import AddIcon from '@mui/icons-material/Add'
+import ChatIcon from '@mui/icons-material/Chat'
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1'
 import GroupAddIcon from '@mui/icons-material/GroupAdd'
 
-import NavBar from '../components/navbar'
+import { useAuth } from "../contexts/AuthContext";
+import NavBar from '../components/navbar';
+import { chatService } from "../services/chatService"
+import { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
 
-const contacts = [
-  {
-    id: 1,
-    name: 'João Silva',
-    grupo: 'f1',
-    type: "individual",
-    lastMessage: 'E aí, tudo certo?',
-    time: '09:15',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-  },
-  {
-    id: 2,
-    name: 'Maria Oliveira',
-    grupo: 'f1',
-    type: "individual",
-    lastMessage: 'Te enviei os arquivos.',
-    time: '08:42',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-  },
-  {
-    id: 3,
-    name: 'Carlos Santos',
-    grupo: 'f1',
-    type: "individual",
-    lastMessage: 'Vamos fazer a reunião às 14h.',
-    time: 'Ontem',
-    avatar: 'https://i.pravatar.cc/150?img=12',
-  },
-  {
-    id: 4,
-    name: 'Ana Costa',
-    grupo: 'f1',
-    type: "individual",
-    lastMessage: '😂😂😂',
-    time: 'Ontem',
-    avatar: 'https://i.pravatar.cc/150?img=20',
-  },
-  {
-    id: 5,
-    name: 'Equipe TI',
-    grupo: 'f1',
-    type: "grupo",
-    lastMessage: 'Servidor reiniciado com sucesso.',
-    time: 'Seg',
-    avatar: 'https://i.pravatar.cc/150?img=30',
-  },
-  {
-    id: 6,
-    name: 'Carlos Santos',
-    grupo: 'f1',
-    type: "individual",
-    lastMessage: 'Vamos fazer a reunião às 14h.',
-    time: 'Ontem',
-    avatar: 'https://i.pravatar.cc/150?img=12',
-  },
-  {
-    id: 7,
-    name: 'Ana Costa',
-    grupo: 'f1',
-    type: "individual",
-    lastMessage: '😂😂😂',
-    time: 'Ontem',
-    avatar: 'https://i.pravatar.cc/150?img=20',
-  },
-  {
-    id: 8,
-    name: 'Equipe INFRA',
-    grupo: 'f1',
-    type: "grupo",
-    lastMessage: 'Servidor reiniciado com sucesso.',
-    time: 'Seg',
-    avatar: 'https://i.pravatar.cc/150?img=30',
-  },
-]
 
 export default function Home() {
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const [chats, setChats] = useState([]);
 
+  useEffect(() => {
+    const getChats = async () => {
+      try {
+        const res = await chatService.getInitialChats(token);
+
+        if(!res || res.length == 0){
+          toast.error("Erro ao buscar Conversas");
+          return;
+        }
+
+        setChats(res.chats);
+      } catch (error) {
+        console.error(error.message)
+        toast.error(error.message);
+      }
+
+    };
+
+    getChats();
+  }, []);
+
+  function formatChatDate(dateString) {
+    if (!dateString) return "";
+
+    const date = new Date(dateString);
+    const now = new Date();
+
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((today - target) / 86400000);
+
+    if (diffDays === 0) {
+      return date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    if (diffDays === 1) {
+      return "Ontem";
+    }
+
+    if (diffDays < 7) {
+      return date.toLocaleDateString("pt-BR", {
+        weekday: "short",
+      }).replace(".", "");
+    }
+
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
+  }
+
+  const hasContacts = chats.length > 0;
 
   return (
     <Box
@@ -116,57 +110,100 @@ export default function Home() {
         }}
       >
         <List disablePadding>
-          {contacts.map((contact) => (
-            <ListItemButton
-              key={contact.id}
-              onClick={() => navigate(`/conversa/${contact.id}`)}
+          {hasContacts ? (
+            // Lista de contatos (quando existem)
+            <List disablePadding>
+              {chats.map((contact) => (
+                <ListItemButton
+                  key={contact.id}
+                  onClick={() => navigate(`/conversa/${contact.id}`)}
+                  sx={{
+                    py: 1.5,
+                    px: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <ListItemAvatar sx={{ mr: 1 }}>
+                    <Avatar
+                      src={contact.avatar}
+                      sx={{ width: 52, height: 52 }}
+                    />
+                  </ListItemAvatar>
+
+                  <ListItemText
+                    primary={
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography fontWeight={600}>
+                          {contact.nome}
+                        </Typography>
+
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          {formatChatDate(contact.updated_at)}
+                        </Typography>
+                      </Box>
+                    }
+                    secondary={
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        noWrap
+                      >
+                        {contact.last_message}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              ))}
+            </List>
+          ) : (
+            // Mensagem quando não há contatos
+            <Box
               sx={{
-                py: 1.5,
-                px: 2,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 3,
               }}
             >
-              <ListItemAvatar sx={{ mr: 1 }}>
-                <Avatar
-                  src={contact.avatar}
-                  sx={{ width: 52, height: 52 }}
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 4,
+                  textAlign: 'center',
+                  maxWidth: 400,
+                  bgcolor: 'transparent',
+                }}
+              >
+                <ChatIcon
+                  sx={{
+                    fontSize: 80,
+                    color: 'text.disabled',
+                    mb: 2,
+                  }}
                 />
-              </ListItemAvatar>
-
-              <ListItemText
-                primary={
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Typography fontWeight={600}>
-                      {contact.name}
-                    </Typography>
-
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                    >
-                      {contact.time}
-                    </Typography>
-                  </Box>
-                }
-                secondary={
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    noWrap
-                  >
-                    {contact.lastMessage}
-                  </Typography>
-                }
-              />
-            </ListItemButton>
-          ))}
+                <Typography variant="h5" gutterBottom color="text.primary">
+                  Nenhum contato
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Você ainda não tem nenhuma conversa.
+                  <br />
+                  Clique no botão abaixo para iniciar uma nova conversa ou criar um grupo.
+                </Typography>
+              </Paper>
+            </Box>
+          )}
         </List>
 
       </Box>

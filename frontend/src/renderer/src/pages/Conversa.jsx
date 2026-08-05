@@ -45,6 +45,9 @@ import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Picker from 'emoji-picker-react'
 
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from 'react-hot-toast';
+
 // Função para converter WebM para WAV
 const convertToWav = async (webmBlob) => {
   return new Promise((resolve, reject) => {
@@ -117,36 +120,15 @@ const writeString = (view, offset, string) => {
   }
 };
 
-const messages = [
-  {
-    id: 1,
-    fromMe: false,
-    text: 'Bom dia!',
-    time: '09:10',
-  },
-  {
-    id: 2,
-    fromMe: true,
-    text: 'Bom dia! Tudo bem?',
-    time: '09:11',
-  },
-  {
-    id: 3,
-    fromMe: false,
-    text: 'Tudo sim. Você conseguiu terminar o projeto?',
-    time: '09:12',
-  },
-  {
-    id: 4,
-    fromMe: true,
-    text: 'Consegui sim. Vou te enviar ainda hoje.',
-    time: '09:13',
-  },
-]
 
 export default function Conversa() {
   const { id } = useParams();
+  const { token } = useAuth();
   const navigate = useNavigate();
+
+  // Dados da Conversa
+  const [chat, setChat] = useState({});
+  const [mensagens, setMensagens] = useState([]);
 
   // Estados para anexos
   const [anchorEl, setAnchorEl] = useState(null);
@@ -191,18 +173,31 @@ export default function Conversa() {
   const open = Boolean(anchorEl);
   const emojiOpen = Boolean(emojiAnchorEl);
 
+  useEffect(()=>{
+    const getChat = async () => {
+      try {
+
+      } catch (error) {
+        toast.error("Erro ao capturar dados da conversa");
+      }
+    }
+    const getMessages = async () => {
+      try {
+
+      } catch (error) {
+        toast.error("Erro ao capturar mensagens da conversa");
+      }
+    }
+
+    getChat();
+    getMessages();
+  }, []);
+
   //Drag and drop handlers
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounterRef = useRef(0);
 
-  // Gerar dados de waveform simulados (fallback)
-  const generateWaveformData = () => {
-    const data = [];
-    for (let i = 0; i < 60; i++) {
-      data.push(Math.random() * 30 + 5);
-    }
-    return data;
-  };
+
 
   // Função para atualizar o waveform em tempo real
   const updateWaveform = () => {
@@ -797,6 +792,7 @@ export default function Conversa() {
     console.log(`${newFiles.length} arquivo(s) arrastado(s):`, newFiles);
   }, []);
 
+  const hasMessages = mensagens.length > 0;
 
   const DragOverlay = () => {
     if (!isDragOver) return null;
@@ -921,7 +917,7 @@ export default function Conversa() {
           }}
         >
           <Stack spacing={1.5}>
-            {messages.map((msg) => (
+            {hasMessages ? mensagens.map((msg) => (
               <Box
                 key={msg.id}
                 sx={{
@@ -955,7 +951,11 @@ export default function Conversa() {
                   </Typography>
                 </Paper>
               </Box>
-            ))}
+            )) : (
+              <>
+
+              </>
+            )}
           </Stack>
         </Box>
 

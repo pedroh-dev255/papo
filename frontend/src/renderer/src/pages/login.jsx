@@ -60,8 +60,6 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      console.log(email, password, codigo, salvarCodigo, salvarUser);
-
       if( email == "" || password == "" || codigo == ""){
         throw new Error("Preencha todos os campos!");
       }
@@ -72,8 +70,6 @@ export default function Login() {
 
       // Realiza o login
       const response = await authService.login(email, password, codigo);
-
-      console.log(response);
 
       if(response.success !== true){
         throw new Error(response.message || "Erro ao realizar login!");

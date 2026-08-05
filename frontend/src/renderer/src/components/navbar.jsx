@@ -231,8 +231,8 @@ export default function Navbar() {
                                 src={user?.avatar}
                                 alt={user?.name || "Usuário"}
                                 sx={{
-                                    width: 28,
-                                    height: 28,
+                                    width: 30,
+                                    height: 30,
                                     bgcolor: "#bebebe",
                                     color: "#555555",
                                     fontSize: "12px",
