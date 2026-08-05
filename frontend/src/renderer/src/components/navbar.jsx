@@ -24,6 +24,9 @@ import {
 } from "@mui/icons-material";
 import { styled, keyframes } from "@mui/material/styles";
 import icon from "../assets/papo_circle.svg"
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-hot-toast";
+import { authService } from "../services/authService";
 
 
 // Animação de piscar
@@ -79,10 +82,7 @@ export default function Navbar() {
     const location = useLocation();
     const [anchorEl, setAnchorEl] = useState(null);
     const [notifications, setNotifications] = useState(3);
-    const [user, setUser] = useState(() => {
-        const userData = localStorage.getItem("user");
-        return userData ? JSON.parse(userData) : null;
-    });
+    const { user, logout } = useAuth();
 
 
     const handleMenuOpen = (event) => {
@@ -95,10 +95,14 @@ export default function Navbar() {
         setAnchorEl(null);
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login");
+    const handleLogout = async () => {
+      try {
+        await authService.logout();
+        await logout();
+        navigate("/login", { replace: true });
+      } catch (error) {
+        toast.error(error.message);
+      }
     };
 
     const handleNavigate = (path) => {

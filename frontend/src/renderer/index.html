@@ -7,10 +7,10 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="
-        default-src 'self';
+        default-src 'self' http:;
         script-src 'self';
         style-src 'self' 'unsafe-inline';
-        img-src 'self' data: https: blob:;
+        img-src 'self' data: https: blob: http: https:;
         media-src 'self' blob:;
       "
     />

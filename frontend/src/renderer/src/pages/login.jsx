@@ -1,8 +1,6 @@
-import { useState } from "react";
+// src/pages/Login.jsx
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
 import toast from "react-hot-toast";
 import {
   Container,
@@ -14,6 +12,9 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
 } from "@mui/material";
 import {
   Email,
@@ -21,64 +22,80 @@ import {
   Visibility,
   VisibilityOff,
   Business,
+  Key,
 } from "@mui/icons-material";
-import KeyIcon from '@mui/icons-material/Key';
 import { useAuth } from "../contexts/AuthContext";
 import icon from "../assets/papo_circle.svg";
 
-const schema = yup.object().shape({
-  codigo : yup
-    .string()
-    .required("Email é obrigatório"),
-  email: yup
-    .string()
-    .email("Email inválido")
-    .required("Email é obrigatório"),
-  password: yup
-    .string()
-    .min(6, "Senha deve ter no mínimo 6 caracteres")
-    .required("Senha é obrigatória"),
-});
+import { authService } from "../services/authService";
+import default_profile from "../assets/default_profile.svg"
+import { saveStorage, removeStorage, getStorage } from "../services/storage";
 
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [codigo, setCodigo] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(schema),
-  });
+  const [salvarCodigo, setSalvarCodigo] = useState(true);
+  const [salvarUser, setSalvarUser] = useState(true);
 
-  const onSubmit = async (data) => {
+  useEffect(()=>{
+    const cod = getStorage("login_codigo");
+    if(cod){
+      setCodigo(cod);
+    }
+
+    const email = getStorage("login_email");
+    if(email){
+      setEmail(email);
+    }
+
+  },[])
+
+  async function handleSubmit(e) {
+    e.preventDefault();
     setLoading(true);
     try {
-      // TODO: Integrar com a API real (backend ou IPC do Electron)
-      // Para Electron, substitua a simulação pela chamada IPC:
-      // const response = await window.electron.ipcRenderer.invoke('auth:login', data);
+      console.log(email, password, codigo, salvarCodigo, salvarUser);
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if( email == "" || password == "" || codigo == ""){
+        throw new Error("Preencha todos os campos!");
+      }
 
-      // Gera um token e dados do usuário (substitua por dados reais da API)
-      const token = `token-${Date.now()}`;
+      saveStorage("login_codigo", salvarCodigo ? codigo: null);
+
+      saveStorage("login_email", salvarUser ? email : null);
+
+      // Realiza o login
+      const response = await authService.login(email, password, codigo);
+
+      console.log(response);
+
+      if(response.success !== true){
+        throw new Error(response.message || "Erro ao realizar login!");
+      }
+
       const userData = {
-        name: data.email.split("@")[0].charAt(0).toUpperCase() + data.email.split("@")[0].slice(1),
-        email: data.email,
-        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+        id: response.user.userdata.id,
+        name: response.user.userdata.nome,
+        email: response.user.userdata.email,
+        avatar: response.user.userdata.avatar || default_profile,
+        unit_id: response.user.userdata.unit_id,
+        codigo,
       };
 
-      // Usa o contexto de autenticação
-      login(userData, token);
+      login(userData, response.user.token);
 
       toast.success("Login realizado com sucesso!");
       navigate("/", { replace: true });
+
     } catch (error) {
-      toast.error("Erro ao fazer login. Verifique suas credenciais.");
-      console.error("Login error:", error);
+
+      toast.error(error.message || "Erro ao fazer login. Verifique suas credenciais.");
     } finally {
       setLoading(false);
     }
@@ -147,7 +164,7 @@ export default function Login() {
                 color: "#666",
                 fontSize: "13px",
                 fontWeight: 300,
-                letterSpacing: "0.3px"
+                letterSpacing: "0.3px",
               }}
             >
               Comunicação Interna
@@ -155,108 +172,104 @@ export default function Login() {
           </Box>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)}>
-
+          <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Codigo"
+              label="Código da Empresa"
               type="text"
               margin="normal"
-              {...register("codigo")}
-              error={!!errors.codigo}
-              helperText={errors.codigo?.message}
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
               variant="outlined"
               sx={{
-                '& .MuiOutlinedInput-root': {
+                "& .MuiOutlinedInput-root": {
                   borderRadius: 0,
                   bgcolor: "#eeeded",
-                  '& fieldset': {
-                    borderColor: '#bebebe',
+                  "& fieldset": {
+                    borderColor: "#bebebe",
                   },
-                  '&:hover fieldset': {
-                    borderColor: '#525252',
+                  "&:hover fieldset": {
+                    borderColor: "#525252",
                   },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#353535',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#4e4e4e',
-                  '&.Mui-focused': {
-                    color: '#4e4e4e',
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#353535",
                   },
                 },
-                '& .MuiInputBase-input': {
-                  color: '#494949',
+                "& .MuiInputLabel-root": {
+                  color: "#4e4e4e",
+                  "&.Mui-focused": {
+                    color: "#4e4e4e",
+                  },
                 },
-                '& .MuiFormHelperText-root': {
-                  color: '#e41414',
+                "& .MuiInputBase-input": {
+                  color: "#494949",
+                },
+                "& .MuiFormHelperText-root": {
+                  color: "#e41414",
                   marginLeft: 0,
                 },
-                '& .Mui-error .MuiOutlinedInput-root fieldset': {
-                  borderColor: '#e41414',
+                "& .Mui-error .MuiOutlinedInput-root fieldset": {
+                  borderColor: "#e41414",
                 },
-                '& .Mui-error .MuiFormHelperText-root': {
-                  color: '#cc3333',
+                "& .Mui-error .MuiFormHelperText-root": {
+                  color: "#cc3333",
                 },
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <KeyIcon sx={{ color: '#555', fontSize: 20 }} />
+                    <Key sx={{ color: "#555", fontSize: 20 }} />
                   </InputAdornment>
                 ),
               }}
             />
-
 
             <TextField
               fullWidth
               label="Email"
               type="email"
               margin="normal"
-              {...register("email")}
-              error={!!errors.email}
-              helperText={errors.email?.message}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               variant="outlined"
               sx={{
-                '& .MuiOutlinedInput-root': {
+                "& .MuiOutlinedInput-root": {
                   borderRadius: 0,
                   bgcolor: "#eeeded",
-                  '& fieldset': {
-                    borderColor: '#bebebe',
+                  "& fieldset": {
+                    borderColor: "#bebebe",
                   },
-                  '&:hover fieldset': {
-                    borderColor: '#525252',
+                  "&:hover fieldset": {
+                    borderColor: "#525252",
                   },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#353535',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#4e4e4e',
-                  '&.Mui-focused': {
-                    color: '#4e4e4e',
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#353535",
                   },
                 },
-                '& .MuiInputBase-input': {
-                  color: '#494949',
+                "& .MuiInputLabel-root": {
+                  color: "#4e4e4e",
+                  "&.Mui-focused": {
+                    color: "#4e4e4e",
+                  },
                 },
-                '& .MuiFormHelperText-root': {
-                  color: '#e41414',
+                "& .MuiInputBase-input": {
+                  color: "#494949",
+                },
+                "& .MuiFormHelperText-root": {
+                  color: "#e41414",
                   marginLeft: 0,
                 },
-                '& .Mui-error .MuiOutlinedInput-root fieldset': {
-                  borderColor: '#e41414',
+                "& .Mui-error .MuiOutlinedInput-root fieldset": {
+                  borderColor: "#e41414",
                 },
-                '& .Mui-error .MuiFormHelperText-root': {
-                  color: '#cc3333',
+                "& .Mui-error .MuiFormHelperText-root": {
+                  color: "#cc3333",
                 },
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Email sx={{ color: '#555', fontSize: 20 }} />
+                    <Email sx={{ color: "#555", fontSize: 20 }} />
                   </InputAdornment>
                 ),
               }}
@@ -267,48 +280,47 @@ export default function Login() {
               label="Senha"
               type={showPassword ? "text" : "password"}
               margin="normal"
-              {...register("password")}
-              error={!!errors.password}
-              helperText={errors.password?.message}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               variant="outlined"
               sx={{
-                '& .MuiOutlinedInput-root': {
+                "& .MuiOutlinedInput-root": {
                   borderRadius: 0,
                   bgcolor: "#eeeded",
-                  '& fieldset': {
-                    borderColor: '#bebebe',
+                  "& fieldset": {
+                    borderColor: "#bebebe",
                   },
-                  '&:hover fieldset': {
-                    borderColor: '#525252',
+                  "&:hover fieldset": {
+                    borderColor: "#525252",
                   },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#353535',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#4e4e4e',
-                  '&.Mui-focused': {
-                    color: '#4e4e4e',
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#353535",
                   },
                 },
-                '& .MuiInputBase-input': {
-                  color: '#494949',
+                "& .MuiInputLabel-root": {
+                  color: "#4e4e4e",
+                  "&.Mui-focused": {
+                    color: "#4e4e4e",
+                  },
                 },
-                '& .MuiFormHelperText-root': {
-                  color: '#e41414',
+                "& .MuiInputBase-input": {
+                  color: "#494949",
+                },
+                "& .MuiFormHelperText-root": {
+                  color: "#e41414",
                   marginLeft: 0,
                 },
-                '& .Mui-error .MuiOutlinedInput-root fieldset': {
-                  borderColor: '#e41414',
+                "& .Mui-error .MuiOutlinedInput-root fieldset": {
+                  borderColor: "#e41414",
                 },
-                '& .Mui-error .MuiFormHelperText-root': {
-                  color: '#cc3333',
+                "& .Mui-error .MuiFormHelperText-root": {
+                  color: "#cc3333",
                 },
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Lock sx={{ color: '#555', fontSize: 20 }} />
+                    <Lock sx={{ color: "#555", fontSize: 20 }} />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -316,7 +328,7 @@ export default function Login() {
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
-                      sx={{ color: '#555' }}
+                      sx={{ color: "#555" }}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -324,12 +336,52 @@ export default function Login() {
                 ),
               }}
             />
-            <Typography>
-              Salvar Codigo
-            </Typography>
-            <Typography>
-              Salvar Usuario
-            </Typography>
+
+            <FormGroup sx={{ mt: 2 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={salvarCodigo}
+                    onChange={(e) => setSalvarCodigo(e.target.checked)}
+                    sx={{
+                      color: "#555",
+                      "&.Mui-checked": {
+                        color: "#333",
+                      },
+                    }}
+                  />
+                }
+                label="Salvar código da empresa"
+                sx={{
+                  "& .MuiFormControlLabel-label": {
+                    color: "#555",
+                    fontSize: "14px",
+                  },
+                }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={salvarUser}
+                    onChange={(e) => setSalvarUser(e.target.checked)}
+                    sx={{
+                      color: "#555",
+                      "&.Mui-checked": {
+                        color: "#333",
+                      },
+                    }}
+                  />
+                }
+                label="Salvar usuário"
+                sx={{
+                  "& .MuiFormControlLabel-label": {
+                    color: "#555",
+                    fontSize: "14px",
+                  },
+                }}
+              />
+            </FormGroup>
+
             <Button
               type="submit"
               fullWidth
@@ -340,22 +392,22 @@ export default function Login() {
                 mt: 3,
                 py: 1.5,
                 borderRadius: 0,
-                bgcolor: '#333',
-                color: '#e0e0e0',
+                bgcolor: "#333",
+                color: "#e0e0e0",
                 fontWeight: 400,
-                letterSpacing: '0.5px',
-                fontSize: '14px',
-                '&:hover': {
-                  bgcolor: '#444',
+                letterSpacing: "0.5px",
+                fontSize: "14px",
+                "&:hover": {
+                  bgcolor: "#444",
                 },
-                '&:disabled': {
-                  bgcolor: '#222',
-                  color: '#555',
+                "&:disabled": {
+                  bgcolor: "#222",
+                  color: "#555",
                 },
               }}
             >
               {loading ? (
-                <CircularProgress size={24} sx={{ color: '#666' }} />
+                <CircularProgress size={24} sx={{ color: "#666" }} />
               ) : (
                 "Entrar"
               )}
@@ -367,33 +419,33 @@ export default function Login() {
             <Typography
               variant="caption"
               sx={{
-                color: '#444',
-                fontSize: '11px',
-                letterSpacing: '0.3px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                color: "#444",
+                fontSize: "11px",
+                letterSpacing: "0.3px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 gap: 0.5,
               }}
             >
-              <Business sx={{ fontSize: 14, color: '#333' }} />
+              <Business sx={{ fontSize: 14, color: "#333" }} />
               <span>© 2026 - </span>
               <a
                 href="https://www.phcore.com.br"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  color: '#555',
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
+                  color: "#555",
+                  textDecoration: "none",
+                  transition: "color 0.2s",
                 }}
-                onMouseEnter={(e) => e.target.style.color = '#999'}
-                onMouseLeave={(e) => e.target.style.color = '#555'}
+                onMouseEnter={(e) => (e.target.style.color = "#999")}
+                onMouseLeave={(e) => (e.target.style.color = "#555")}
               >
                 PH Core
               </a>
-              <span style={{ color: '#333' }}>|</span>
-              <span style={{ color: '#333' }}>v1.0</span>
+              <span style={{ color: "#333" }}>|</span>
+              <span style={{ color: "#333" }}>v1.0</span>
             </Typography>
           </Box>
         </Paper>

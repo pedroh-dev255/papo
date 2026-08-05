@@ -33,6 +33,7 @@ CREATE TABLE users(
     id int not null AUTO_INCREMENT,
     tenant_id int not null,
     unit_id int not null,
+    avatar varchar(200),
     nome varchar(200) NOT NULL,
     email varchar(200) NOT NULL,
     senha varchar(200) NOT NULL,
@@ -44,4 +45,3 @@ CREATE TABLE users(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-

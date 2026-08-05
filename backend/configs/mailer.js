@@ -39,11 +39,8 @@ async function sendEmail(to, subject, title, body, link = null) {
 <tr>
 <td style="padding:32px;background:linear-gradient(135deg,#242424,#7B58D9);text-align:center;">
 <h1 style="margin:0;color:#fff;font-size:28px;font-weight:bold;">
-PharmaTrack
+Papo - Chat
 </h1>
-<p style="margin:8px 0 0;color:#dbeafe;font-size:15px;">
-Gestão inteligente de medicamentos
-</p>
 </td>
 </tr>
 
@@ -91,7 +88,7 @@ ${link}
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:35px 0;">
 
 <p style="font-size:14px;color:#6b7280;line-height:1.7;margin:0;">
-Este é um e-mail automático enviado pelo <strong>PharmaTrack</strong>.
+Este é um e-mail automático enviado pelo <strong>Papo Chat</strong>.
 Caso você não reconheça esta solicitação, ignore esta mensagem.
 </p>
 
@@ -103,7 +100,7 @@ Caso você não reconheça esta solicitação, ignore esta mensagem.
 <td style="padding:25px;text-align:center;background:#f9fafb;border-top:1px solid #e5e7eb;">
 
 <p style="margin:0;color:#9ca3af;font-size:13px;">
-© ${new Date().getFullYear()} PharmaTrack
+© ${new Date().getFullYear()} Papo
 </p>
 
 <p style="margin-top:6px;color:#9ca3af;font-size:12px;">
@@ -123,7 +120,7 @@ Todos os direitos reservados.
 </html>`;
 
     const info = await transporter.sendMail({
-      from: `"PharmaTrack - " <${process.env.MAIL_USER}>`,
+      from: `"Papo Chat - " <${process.env.MAIL_USER}>`,
       to,
       subject,
       html: template,

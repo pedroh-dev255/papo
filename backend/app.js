@@ -4,6 +4,13 @@ const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 
+// middlewares
+const authMiddleware = require("./middlewares/authMiddleware");
+
+// Rotas
+const authRoute = require("./routes/authRoute");
+const userRoute = require("./routes/userRoute");
+
 const app = express();
 
 app.use(cors());
@@ -26,9 +33,16 @@ app.get("/", (req, res) => {
     });
 });
 
+app.get("/auth/validate", authMiddleware, (req, res) => {
+    return res.status(200).json({
+        success: true,
+        message: "Validado"
+    })
+});
+
 // Routes
-// app.use("/auth", authRoutes);
-// app.use("/users", userRoutes);
+app.use("/auth", authRoute);
+app.use("/users", authMiddleware, userRoute);
 // app.use("/chat", chatRoutes);
 
 app.use((req, res) => {
@@ -39,12 +53,9 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-
-    console.error(err);
-
     return res.status(500).json({
         success: false,
-        message: "Erro interno."
+        message: err.message
     });
 
 });
