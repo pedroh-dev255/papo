@@ -4,6 +4,7 @@ const {
     EgressClient,
     IngressClient
 } = require("livekit-server-sdk");
+require("dotenv").config();
 
 const host = process.env.LIVEKIT_HOST;
 const apiKey = process.env.LIVEKIT_API_KEY;
