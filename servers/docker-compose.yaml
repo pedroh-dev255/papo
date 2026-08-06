@@ -72,9 +72,9 @@ services:
       - redis
 
     ports:
-      - "${LIVEKIT_HTTP_PORT}:7880"
-      - "${LIVEKIT_TCP_PORT}:7881"
-      - "${LIVEKIT_UDP_PORT}:7882/udp"
+      - "${LIVEKIT_PORT_HTTP}:7880"
+      - "${LIVEKIT_PORT_TCP}:7881"
+      - "${LIVEKIT_PORT_UDP}:7882/udp"
 
     volumes:
       - ./generated/livekit.yaml:/etc/livekit.yaml:ro
