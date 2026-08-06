@@ -19,3 +19,4 @@ turn:
   domain: ${TURN_DOMAIN}
   tls_port: ${TURN_PORT_TLS}
   udp_port: ${TURN_PORT_UDP}
+  external_tls: true
