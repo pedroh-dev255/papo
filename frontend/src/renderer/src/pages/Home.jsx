@@ -37,7 +37,7 @@ export default function Home() {
           toast.error("Erro ao buscar Conversas");
           return;
         }
-
+        console.log(res)
         setChats(res.chats);
       } catch (error) {
         console.error(error.message)

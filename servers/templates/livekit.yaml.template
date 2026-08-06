@@ -1,0 +1,22 @@
+port: ${LIVEKIT_PORT_HTTP}
+
+rtc:
+  tcp_port: ${LIVEKIT_PORT_TCP}
+  udp_port: ${LIVEKIT_PORT_UDP}
+  use_external_ip: true
+
+redis:
+  address: redis:6379
+
+keys:
+  ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
+
+logging:
+  level: ${LOG_LEVEL}
+
+turn:
+  enabled: true
+  domain: ${TURN_DOMAIN}
+  tls_port: ${TURN_PORT_TLS}
+  udp_port: ${TURN_PORT_UDP}
+  external_tls: true

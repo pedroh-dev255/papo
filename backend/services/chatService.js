@@ -1,7 +1,9 @@
 const pool = require("../configs/database");
+const storage = require("./storageService");
 
 async function getInitial(user_id, tenant_id) {
     try {
+        let avatar;
         const [rows] = await pool.query(`
             SELECT
                 c.id,
@@ -86,7 +88,16 @@ async function getInitial(user_id, tenant_id) {
             tenant_id
         ]);
 
+        await Promise.all(
+            rows.map(async (chat) => {
+                if (chat.avatar) {
+                    chat.avatar = await storage.getSignedUrl(chat.avatar);
+                }
+            })
+        );
+
         return rows;
+
 
     } catch (error) {
         throw new Error(error.message);

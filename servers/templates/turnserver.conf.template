@@ -1,0 +1,15 @@
+realm=${TURN_DOMAIN}
+
+listening-port=${TURN_PORT}
+tls-listening-port=${TURN_TLS_PORT}
+
+fingerprint
+
+use-auth-secret
+static-auth-secret=${TURN_SECRET}
+
+lt-cred-mech
+
+total-quota=100
+
+bps-capacity=0
