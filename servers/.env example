@@ -1,0 +1,48 @@
+#######################################
+# MYSQL
+#######################################
+MYSQL_ROOT_PASSWORD=senhaforte
+MYSQL_DATABASE=papo_chat
+MYSQL_PORT=3306
+
+#######################################
+# REDIS
+#######################################
+REDIS_PORT=6379
+
+#######################################
+# MINIO
+#######################################
+MINIO_ROOT_USER=admin
+MINIO_ROOT_PASSWORD=senha
+MINIO_BUCKET=papochat
+
+MINIO_API_PORT=9000
+MINIO_CONSOLE_PORT=9001
+
+#######################################
+# LIVEKIT
+#######################################
+LIVEKIT_API_KEY=devkey
+LIVEKIT_API_SECRET=sua_chave_grande
+
+LIVEKIT_PORT_HTTP=7880
+LIVEKIT_PORT_TCP=7881
+LIVEKIT_PORT_UDP=7882
+
+LIVEKIT_DOMAIN=voice.yourdomain.com.br
+
+#######################################
+# TURN
+#######################################
+TURN_DOMAIN=voice.yourdomain.com.br
+
+TURN_PORT_UDP=3478
+TURN_PORT_TLS=5349
+
+TURN_SECRET=uma_chave_bem_grande
+
+#######################################
+# LOG
+#######################################
+LOG_LEVEL=info
