@@ -3,7 +3,6 @@ const storage = require("./storageService");
 
 async function getInitial(user_id, tenant_id) {
     try {
-        let avatar;
         const [rows] = await pool.query(`
             SELECT
                 c.id,

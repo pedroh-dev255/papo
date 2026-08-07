@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const path = require("path");
 const { client } = require("../configs/minio");
+const redis = require("../configs/redis");
 
 const BUCKET = process.env.MINIO_BUCKET;
 
@@ -99,12 +100,28 @@ async function objectExists(objectName) {
  * URL assinada
  */
 async function getSignedUrl(objectName, expires = 3600) {
+    const redisUrl = await redis.get(`midiaObj:${objectName}:url`);
+    
+    if(redisUrl){
+        return redisUrl
+    }
+    
 
-    return await client.presignedGetObject(
+    const url = await client.presignedGetObject(
         BUCKET,
         objectName,
         expires
     );
+
+    const cacheExpires = Math.max(expires - 300, 1);
+
+    await redis.set(
+        `midiaObj:${objectName}:url`,
+        url,
+        "EX",
+        cacheExpires,
+    );
+    return url
 
 }
 

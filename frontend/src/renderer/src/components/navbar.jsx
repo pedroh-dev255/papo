@@ -297,7 +297,7 @@ export default function Navbar() {
                     <Divider sx={{ bgcolor: "#bebebe" }} />
 
                     <MenuItem
-                        onClick={() => handleNavigate("/profile")}
+                        onClick={() => handleNavigate(`/perfil/${user?.id}`)}
                         sx={{
                             fontSize: "13px",
                             color: "#555555",

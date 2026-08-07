@@ -4,6 +4,7 @@ import Login from '../pages/login';
 import Home from '../pages/Home';
 import Contatos from '../pages/Contatos';
 import Conversa from '../pages/Conversa';
+import Perfil from '../pages/Perfil';
 
 export default function AppRoutes() {
   return (
@@ -22,7 +23,15 @@ export default function AppRoutes() {
         path="/contatos"
         element={
           <AuthGuard>
-          <Contatos />
+            <Contatos />
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/perfil/:id"
+        element={
+          <AuthGuard>
+            <Perfil />
           </AuthGuard>
         }
       />
@@ -30,7 +39,7 @@ export default function AppRoutes() {
         path="/conversa/:id"
         element={
           <AuthGuard>
-          <Conversa />
+            <Conversa />
           </AuthGuard>
         }
       />
