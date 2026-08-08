@@ -42,37 +42,95 @@ export default function Login() {
 
   const [salvarCodigo, setSalvarCodigo] = useState(true);
   const [salvarUser, setSalvarUser] = useState(true);
+  const [autoLogin, setAutoLogin] = useState(false);
 
   useEffect(()=>{
-    const cod = getStorage("login_codigo");
-    if(cod){
-      setCodigo(cod);
+    async function tryAutoLogin() {
+      const cod = getStorage("login_codigo");
+      const savedEmail = getStorage("login_email");
+      const savedPassword = getStorage("login_pass");
+      const auto = getStorage("autoLogin");
+      const blocked = getStorage("autoLoginBlocked");
+
+      if (cod) {
+        setCodigo(cod);
+      }
+
+      if (savedEmail) {
+        setEmail(savedEmail);
+      }
+
+      // Não tenta auto-login se o usuário fez logout
+      if (auto && auto !== "false" && !blocked) {
+        if (!cod || !savedEmail || !savedPassword) {
+          return;
+        }
+
+        setCodigo(cod);
+        setEmail(savedEmail);
+        setPassword(savedPassword);
+
+        await doLogin(savedEmail, savedPassword, cod, true);
+      }
     }
 
-    const email = getStorage("login_email");
-    if(email){
-      setEmail(email);
-    }
+    tryAutoLogin();
 
   },[])
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    await doLogin(
+      email,
+      password,
+      codigo,
+      false
+    );
+  }
+
+  async function doLogin(loginEmail, loginPassword, loginCodigo, isAutoLogin = false) {
     setLoading(true);
+
     try {
-      if( email == "" || password == "" || codigo == ""){
+      if (!loginEmail || !loginPassword || !loginCodigo) {
         throw new Error("Preencha todos os campos!");
       }
 
-      saveStorage("login_codigo", salvarCodigo ? codigo: null);
+      // Só salva as preferências quando for login manual
+      if (!isAutoLogin) {
+        saveStorage(
+          "login_codigo",
+          salvarCodigo ? loginCodigo : null
+        );
 
-      saveStorage("login_email", salvarUser ? email : null);
+        saveStorage(
+          "login_email",
+          salvarUser ? loginEmail : null
+        );
 
-      // Realiza o login
-      const response = await authService.login(email, password, codigo);
+        saveStorage("autoLogin", autoLogin);
 
-      if(response.success !== true){
-        throw new Error(response.message || "Erro ao realizar login!");
+        if (autoLogin) {
+          saveStorage("login_pass", loginPassword);
+        } else {
+          removeStorage("login_pass");
+        }
+
+        // Login manual desbloqueia o auto-login novamente
+        removeStorage("autoLoginBlocked");
+      }
+
+      const response = await authService.login(
+        loginEmail,
+        loginPassword,
+        loginCodigo
+      );
+
+      if (response.success !== true) {
+        throw new Error(
+          response.message || "Erro ao realizar login!"
+        );
       }
 
       const userData = {
@@ -81,21 +139,26 @@ export default function Login() {
         email: response.user.userdata.email,
         avatar: response.user.userdata.avatar || default_profile,
         unit_id: response.user.userdata.unit_id,
-        codigo,
+        codigo: loginCodigo,
       };
 
       login(userData, response.user.token);
 
-      toast.success("Login realizado com sucesso!");
+      if (!isAutoLogin) {
+        toast.success("Login realizado com sucesso!");
+      }
+
       navigate("/", { replace: true });
 
     } catch (error) {
-
-      toast.error(error.message || "Erro ao fazer login. Verifique suas credenciais.");
+      toast.error(
+        error.message ||
+        "Erro ao fazer login. Verifique suas credenciais."
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <Box
@@ -337,6 +400,7 @@ export default function Login() {
               <FormControlLabel
                 control={
                   <Checkbox
+                    disabled={autoLogin && "true"}
                     checked={salvarCodigo}
                     onChange={(e) => setSalvarCodigo(e.target.checked)}
                     sx={{
@@ -360,6 +424,7 @@ export default function Login() {
                   <Checkbox
                     checked={salvarUser}
                     onChange={(e) => setSalvarUser(e.target.checked)}
+                    disabled={autoLogin && "true"}
                     sx={{
                       color: "#555",
                       "&.Mui-checked": {
@@ -369,6 +434,33 @@ export default function Login() {
                   />
                 }
                 label="Salvar usuário"
+                sx={{
+                  "& .MuiFormControlLabel-label": {
+                    color: "#555",
+                    fontSize: "14px",
+                  },
+                }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={autoLogin}
+                    onChange={(e) => {
+                      if(e.target.checked == true){
+                        setSalvarCodigo(true);
+                        setSalvarUser(true);
+                      }
+                      setAutoLogin(e.target.checked)
+                    }}
+                    sx={{
+                      color: "#555",
+                      "&.Mui-checked": {
+                        color: "#333",
+                      },
+                    }}
+                  />
+                }
+                label="Login Automatico"
                 sx={{
                   "& .MuiFormControlLabel-label": {
                     color: "#555",

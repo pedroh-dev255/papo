@@ -221,7 +221,7 @@ export default function Home() {
           icon={<PersonAddAlt1Icon />}
           tooltipTitle="Nova conversa"
           onClick={() => {
-            console.log('Nova conversa')
+            navigate("/contatos")
           }}
         />
 

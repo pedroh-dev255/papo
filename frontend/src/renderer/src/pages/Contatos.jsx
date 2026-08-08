@@ -150,7 +150,7 @@ export default function Contatos() {
               if (!Array.isArray(users) || users.length === 0) {
                 return null;
               }
-              console.log(users)
+              //console.log(users)
               return (
                 <Box
                   key={unitId}

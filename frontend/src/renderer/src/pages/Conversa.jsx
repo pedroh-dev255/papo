@@ -44,9 +44,13 @@ import { useParams } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Picker from 'emoji-picker-react'
+import { chatService } from "../services/chatService"
 
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from 'react-hot-toast';
+import { ChatSharp } from '@mui/icons-material';
+
+import { useWebSocket } from "../contexts/WebSocketContext";
 
 // Função para converter WebM para WAV
 const convertToWav = async (webmBlob) => {
@@ -125,6 +129,7 @@ export default function Conversa() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { send: sendWs, connected: wsConnected } = useWebSocket();
 
   // Dados da Conversa
   const [chat, setChat] = useState({});
@@ -176,22 +181,69 @@ export default function Conversa() {
   useEffect(()=>{
     const getChat = async () => {
       try {
+        const data = await chatService.getChatData(token, id);
 
+        console.log(data);
+
+        setChat(data.chatData);
+        setMensagens(data.messages);
       } catch (error) {
         toast.error("Erro ao capturar dados da conversa");
       }
     }
-    const getMessages = async () => {
-      try {
 
-      } catch (error) {
-        toast.error("Erro ao capturar mensagens da conversa");
+    getChat();
+  }, [id]);
+
+  const handleSendMessage = () => {
+    if (!wsConnected) {
+      toast.error("Conexão com o servidor indisponível.");
+      return;
+    }
+
+    const texto = message.trim();
+
+    if (!texto && selectedFiles.length === 0) {
+      return;
+    }
+
+    /*
+    * Por enquanto enviamos apenas texto.
+    *
+    * Arquivos serão tratados separadamente:
+    * upload -> storage -> storage_key -> WS.
+    */
+    if (texto) {
+      const enviado = sendWs({
+        type: "message:create",
+
+        data: {
+          chat_id: Number(id),
+          type: "texto",
+          texto,
+          reply_to: null,
+        },
+      });
+
+      if (!enviado) {
+        toast.error("Não foi possível enviar a mensagem.");
+        return;
       }
     }
 
-    getChat();
-    getMessages();
-  }, []);
+    /*
+    * Arquivos
+    *
+    * Aqui futuramente:
+    *
+    * selectedFiles -> upload
+    * upload -> storage_key
+    * storage_key -> WS
+    */
+
+    setMessage("");
+    setSelectedFiles([]);
+  };
 
   //Drag and drop handlers
   const [isDragOver, setIsDragOver] = useState(false);
@@ -665,15 +717,6 @@ export default function Conversa() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Função para enviar mensagem
-  const handleSendMessage = () => {
-    if (message.trim() || selectedFiles.length > 0) {
-      console.log('Mensagem:', message);
-      console.log('Arquivos:', selectedFiles);
-      setMessage('');
-      setSelectedFiles([]);
-    }
-  };
 
   // Função para tecla Enter
   const handleKeyPress = (event) => {
@@ -792,6 +835,53 @@ export default function Conversa() {
     console.log(`${newFiles.length} arquivo(s) arrastado(s):`, newFiles);
   }, []);
 
+  function formatMessageDate(dateString) {
+    if (!dateString) return "";
+
+    const date = new Date(dateString);
+    const now = new Date();
+
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((today - target) / 86400000);
+
+    if (diffDays === 0) {
+      return date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    if (diffDays === 1) {
+      return "Ontem";
+    }
+
+    if (diffDays < 7) {
+      return date.toLocaleDateString("pt-BR", {
+        weekday: "short",
+      }).replace(".", "");
+    }
+
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
+  }
+
+  function formatMessageHour(dateString, userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
+    const date = new Date(dateString);
+    return date.toLocaleString('pt-BR', {
+      timeZone: userTimezone,
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   const hasMessages = mensagens.length > 0;
 
   const DragOverlay = () => {
@@ -877,31 +967,40 @@ export default function Conversa() {
             mt: 6,
             borderBottom: 1,
             borderColor: 'divider',
-            flexShrink: 0,
+            flexShrink: 0
           }}
         >
-          <Toolbar>
-            <IconButton sx={{ ml: -2 }} onClick={() => navigate(-1)}>
-              <ArrowBackIosNewIcon />
-            </IconButton>
-            <Avatar
-              src="https://i.pravatar.cc/150?img=5"
-              sx={{ mr: 2 }}
-            />
-            <Box sx={{ flex: 1 }}>
-              <Typography fontWeight={600}>
-                Maria Oliveira
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Online
-              </Typography>
+          <Toolbar sx={{display: "flex", justifyContent: "space-between"}}>
+            <Box sx={{display: "flex"}}>
+              <IconButton sx={{ ml: -1, mr: 1 }} onClick={() => navigate(-1)}>
+                <ArrowBackIosNewIcon />
+              </IconButton>
+              <Box
+                onClick={() => navigate(`/perfil/${chat.target_id}`)}
+                sx={{display: "flex"}}
+              >
+                <Avatar
+                  src={chat.avatar}
+                  sx={{ mr: 2 }}
+                />
+                <Box sx={{ flex: 1}}>
+                  <Typography fontWeight={600}>
+                    {chat.nome}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Online
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
-            <IconButton>
-              <CallIcon />
-            </IconButton>
-            <IconButton>
-              <MoreVertIcon />
-            </IconButton>
+            <Box>
+              <IconButton>
+                <CallIcon />
+              </IconButton>
+              <IconButton>
+                <MoreVertIcon />
+              </IconButton>
+            </Box>
           </Toolbar>
         </AppBar>
 
@@ -938,7 +1037,12 @@ export default function Conversa() {
                     color: msg.fromMe ? 'primary.contrastText' : 'text.primary',
                   }}
                 >
-                  <Typography>{msg.text}</Typography>
+                  {msg.type == "texto" ? (
+                    <Typography>{msg.texto}</Typography>
+                  ) : (
+                    <></>
+                  )}
+
                   <Typography
                     variant="caption"
                     sx={{
@@ -947,14 +1051,24 @@ export default function Conversa() {
                       opacity: 0.75,
                     }}
                   >
-                    {msg.time}
+                    {formatMessageHour(msg.created_at)}
                   </Typography>
                 </Paper>
               </Box>
             )) : (
-              <>
-
-              </>
+              <Box
+                sx= {{
+                  backgroundColor: "#ffff",
+                  p: 5,
+                  justifyContent: "center",
+                  alignSelf: "center",
+                  alignItems: "center",
+                  borderRadius: 2.5,
+                  maxWidth: '80%',
+                }}
+              >
+                Envie uma mensagem para iniciar a conversa
+              </Box>
             )}
           </Stack>
         </Box>

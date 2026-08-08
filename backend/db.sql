@@ -1,6 +1,9 @@
 CREATE DATABASE papo_chat;
 use papo_chat;
 
+SET GLOBAL time_zone = '-03:00';
+SET SESSION time_zone = '-03:00';
+
 CREATE TABLE tenant(
     id int not null AUTO_INCREMENT,
     codigo CHAR(8) NOT NULL UNIQUE,
@@ -69,6 +72,10 @@ CREATE TABLE chat(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+ALTER TABLE chat
+ADD COLUMN private_key VARCHAR(100) NULL,
+ADD UNIQUE KEY uk_chat_private_key (tenant_id, private_key);
 
 CREATE TABLE chat_participantes(
     id int not null AUTO_INCREMENT,

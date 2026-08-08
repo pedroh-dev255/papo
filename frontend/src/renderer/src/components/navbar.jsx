@@ -24,9 +24,13 @@ import {
 } from "@mui/icons-material";
 import { styled, keyframes } from "@mui/material/styles";
 import icon from "../assets/papo_circle.svg"
+
+import Versions from "./Versions";
+
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 import { authService } from "../services/authService";
+import { saveStorage, removeStorage, getStorage } from "../services/storage";
 
 
 // Animação de piscar
@@ -97,6 +101,7 @@ export default function Navbar() {
 
     const handleLogout = async () => {
       try {
+        saveStorage("autoLoginBlocked", true);
         await authService.logout();
         await logout();
         navigate("/login", { replace: true });
@@ -161,7 +166,7 @@ export default function Navbar() {
                             fontSize: "16px",
                         }}
                     >
-                        Papo{location.pathname === "/" ? " - Chat" : location.pathname === "/contatos" ? " - Contatos" : location.pathname.startsWith("/conversa") ? " - Conversa" : ""}
+                        Papo{location.pathname === "/" ? " - Chat" : location.pathname === "/contatos" ? " - Contatos" : location.pathname.startsWith("/conversa") ? " - Conversa" : location.pathname.startsWith("/perfil") ? " - Perfil" : ""}
                     </Typography>
                 </Box>
 
@@ -345,6 +350,9 @@ export default function Navbar() {
                         <Logout sx={{ fontSize: 16, mr: 1.5, color: "#cc3333" }} />
                         Sair
                     </MenuItem>
+
+                    <Divider sx={{ bgcolor: "#bebebe" }} />
+                    <Versions />
                 </Menu>
             </Toolbar>
         </AppBar>

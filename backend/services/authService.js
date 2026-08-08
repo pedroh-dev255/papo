@@ -11,7 +11,7 @@ const storageService = require("./storageService");
 async function login(data) {
     try {
 
-        const [rows] = await pool.query("SELECT id, nome, avatar, unit_id, status, email, senha FROM users WHERE email = ? AND tenant_id = ?", [data.email, data.tenant]);
+        const [rows] = await pool.query("SELECT u.id, u.nome, u.avatar, u.unit_id, u.status, u.email, u.telefone, u.ramal, u.senha, un.nome as unidade FROM users u INNER JOIN unit un ON u.unit_id = un.id WHERE u.email = ? AND u.tenant_id = ?", [data.email, data.tenant]);
 
         if (rows.length === 0) {
             throw new Error("Usuário não encontrado");
@@ -43,11 +43,10 @@ async function login(data) {
             { expiresIn: process.env.JWT_EXPIRES },
         );
 
-        await redis.set(
+        await redis.setEx(
             `user:${user.id}:token`,
-            token,
-            "EX",
-            process.env.JWT_EXPIRES_IN,
+            Number(process.env.JWT_EXPIRES_IN),
+            token
         );
 
         return {

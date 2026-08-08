@@ -1,9 +1,18 @@
-import { Navigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Box, CircularProgress } from '@mui/material'
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { WebSocketProvider } from '../contexts/WebSocketContext';
+
+import {
+  Box,
+  CircularProgress
+} from '@mui/material';
 
 export default function AuthGuard({ children }) {
-  const { isAuthenticated, loading } = useAuth()
+
+  const {
+    isAuthenticated,
+    loading
+  } = useAuth();
 
   if (loading) {
     return (
@@ -17,12 +26,22 @@ export default function AuthGuard({ children }) {
       >
         <CircularProgress />
       </Box>
-    )
+    );
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
   }
 
-  return children
+  return (
+    <WebSocketProvider>
+      {children}
+    </WebSocketProvider>
+  );
 }
+

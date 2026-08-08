@@ -7,6 +7,7 @@ import {
   IconButton,
   Fab,
   CircularProgress,
+  Dialog
 } from '@mui/material';
 
 import {
@@ -16,6 +17,7 @@ import {
   BusinessOutlined,
   ChatOutlined,
   PersonOutline,
+  Close
 } from '@mui/icons-material';
 
 import { useEffect, useState } from 'react';
@@ -23,6 +25,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from "../contexts/AuthContext";
 import { useParams, useNavigate } from 'react-router-dom';
 import { profileService } from "../services/profileService";
+import { chatService } from "../services/chatService"
 import NavBar from '../components/navbar'
 
 export default function Perfil() {
@@ -34,6 +37,8 @@ export default function Perfil() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
+
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
   useEffect(() => {
 
@@ -73,6 +78,29 @@ export default function Perfil() {
     }
 
   }, [id, token]);
+
+
+
+  async function getChat(contactId) {
+    try {
+      const chatId = await chatService.getChat(token, contactId);
+      if (!chatId || chatId == null) {
+        throw new Error("ChatId invalido!");
+      }
+      navigate(`/conversa/${chatId.chat}`)
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
+
+  function handleAvatarClick() {
+    if (!perfil?.avatar) {
+      toast("Foto de perfil não existe.");
+      return;
+    }
+
+    setAvatarOpen(true);
+  }
 
 
   /*
@@ -209,12 +237,18 @@ export default function Perfil() {
             <Avatar
               src={perfil.avatar || undefined}
               alt={perfil.nome}
+              onClick={handleAvatarClick}
               sx={{
                 width: 120,
                 height: 120,
                 fontSize: 42,
                 mb: 2,
                 boxShadow: 2,
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+                '&:hover': {
+                  transform: 'scale(1.03)',
+                },
               }}
             >
               {perfil.nome?.charAt(0)?.toUpperCase()}
@@ -446,17 +480,14 @@ export default function Perfil() {
       <Fab
         color="primary"
         variant="extended"
-        onClick={() => {
-          if(fromMe){
+        onClick={async () => {
+          if (fromMe) {
             console.log(
               "Editar Perfil meu perfil. Id:",
               perfil.id
             );
-          }else{
-            console.log(
-              "Iniciar conversa com:",
-              perfil.id
-            );
+          } else {
+            await getChat(Number(perfil.id));
           }
 
         }}
@@ -489,6 +520,56 @@ export default function Perfil() {
 
 
       </Fab>
+      <Dialog
+        open={avatarOpen}
+        onClose={() => setAvatarOpen(false)}
+        fullScreen
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(0, 0, 0, 0.95)',
+          },
+        }}
+      >
+        <IconButton
+          onClick={() => setAvatarOpen(false)}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 2,
+            color: 'white',
+            bgcolor: 'rgba(0, 0, 0, 0.4)',
+            '&:hover': {
+              bgcolor: 'rgba(0, 0, 0, 0.7)',
+            },
+          }}
+        >
+          <Close />
+        </IconButton>
+
+        <Box
+          sx={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: 3,
+          }}
+        >
+          <Box
+            component="img"
+            src={perfil.avatar}
+            alt={perfil.nome}
+            sx={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              borderRadius: 1,
+            }}
+          />
+        </Box>
+      </Dialog>
 
     </Box>
   );

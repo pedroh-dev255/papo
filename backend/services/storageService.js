@@ -100,10 +100,12 @@ async function objectExists(objectName) {
  * URL assinada
  */
 async function getSignedUrl(objectName, expires = 3600) {
-    const redisUrl = await redis.get(`midiaObj:${objectName}:url`);
+    const key = `midiaObj:${objectName}:url`;
     
-    if(redisUrl){
-        return redisUrl
+    const cachedUrl = await redis.get(key);
+
+    if(cachedUrl){
+        return cachedUrl
     }
     
 
@@ -115,13 +117,12 @@ async function getSignedUrl(objectName, expires = 3600) {
 
     const cacheExpires = Math.max(expires - 300, 1);
 
-    await redis.set(
-        `midiaObj:${objectName}:url`,
-        url,
-        "EX",
+    await redis.setEx(
+        key,
         cacheExpires,
+        url
     );
-    return url
+    return url;
 
 }
 

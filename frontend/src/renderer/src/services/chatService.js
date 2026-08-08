@@ -25,5 +25,50 @@ export const chatService = {
     } catch (error) {
       throw new Error(error.message || 'Erro ao consultar chats');
     }
+  },
+
+  async getChat (token, contactId){
+    try {
+      const response = await fetch(`${API_URL}/chats/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: contactId })
+      });
+
+      const data = await response.json();
+
+      if (!data || data.success !== true) {
+        throw new Error(data.message || 'Chats não encontrados');
+      }
+
+      return data;
+    } catch (error) {
+      throw new Error(error.message || 'Erro ao consultar chats');
+    }
+  },
+
+  async getChatData (token, chatId){
+    try {
+      const response = await fetch(`${API_URL}/chats/${chatId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      const data = await response.json();
+
+      if (!data || data.success !== true) {
+        throw new Error(data.message || 'Chats não encontrados');
+      }
+
+      return data;
+    } catch (error) {
+      throw new Error(error.message || 'Erro ao consultar chats');
+    }
   }
 }
